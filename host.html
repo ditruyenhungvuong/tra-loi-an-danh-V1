@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1F3A5F">
+  <meta name="description" content="Trả lời ẩn danh – màn người dẫn: tạo phòng, chiếu câu hỏi và QR, hiện từng câu trả lời.">
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <title>Trả lời ẩn danh · Người dẫn</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/host.css">
+</head>
+<body class="host">
+  <a class="skip-link" href="#main">Bỏ qua đến nội dung chính</a>
+
+  <main id="main" class="page" tabindex="-1">
+    <noscript><p class="card">Trang này cần bật JavaScript.</p></noscript>
+
+    <!-- ===== H0: Nhập khóa người dẫn (chỉ khi không có ?key= và máy chưa nhớ) ===== -->
+    <section id="scr-key" class="card glass" aria-labelledby="key-title" hidden>
+      <span class="badge-tag">💬 Trả lời ẩn danh · Người dẫn</span>
+      <h1 id="key-title" class="page-title" tabindex="-1">Khóa người dẫn</h1>
+      <p class="page-lead">Dán khóa đã nhận. Máy này sẽ nhớ cho lần sau.</p>
+
+      <label class="sr-only" for="host-key">Khóa người dẫn</label>
+      <input id="host-key" class="field-input" type="password" autocomplete="off" spellcheck="false"
+             placeholder="Dán khóa vào đây" enterkeyhint="go" aria-describedby="key-error">
+      <label class="check"><input id="key-show" type="checkbox" data-act="toggle-key"> Hiện khóa</label>
+      <p id="key-error" class="lookup-state" aria-live="polite"></p>
+
+      <button id="btn-key" class="btn primary pill block btn-submit" type="button" data-act="key" disabled>Vào ›</button>
+      <p class="footer-note">Không chiếu màn này lên lớp.</p>
+    </section>
+
+    <!-- ===== H1: Tạo phòng ===== -->
+    <section id="scr-create" class="card glass wide" aria-labelledby="create-title" hidden>
+      <span class="badge-tag">💬 Trả lời ẩn danh · Người dẫn</span>
+      <h1 id="create-title" class="page-title" tabindex="-1">Tạo phòng mới</h1>
+      <p class="page-lead">Mỗi dòng một câu hỏi. Thứ tự dòng là thứ tự hỏi.</p>
+
+      <label class="sr-only" for="questions">Danh sách câu hỏi</label>
+      <textarea id="questions" class="questions-input" rows="8" placeholder="Hãy nhìn quanh bạn và tìm 5 màu sắc đang có ở đây." aria-describedby="questions-count"></textarea>
+      <span id="questions-count" class="fine" aria-live="polite">0 câu hỏi · gợi ý tối đa 10</span>
+
+      <div id="create-error" class="gentle" hidden></div>
+      <div id="create-hint" class="submit-hint" aria-live="polite">💡 Nhập ít nhất một câu hỏi nhé.</div>
+      <button id="btn-create" class="btn primary pill block btn-submit" type="button" data-act="create" disabled>Tạo phòng ›</button>
+      <p class="footer-note">Mã phòng 4 số sẽ hiện cùng QR ở màn sau.</p>
+    </section>
+
+    <!-- ===== H2: Màn chiếu ===== -->
+    <section id="scr-stage" class="stage-wrap" aria-labelledby="stage-q-text" hidden>
+      <div class="stage-grid">
+        <header class="stage-head">
+          <span id="stage-q-label" class="q-badge stage"></span>
+          <h1 id="stage-q-text" class="stage-q" tabindex="-1"></h1>
+        </header>
+
+        <aside class="qr-panel" aria-label="Cách vào phòng">
+          <p class="stage-meta">Quét để vào</p>
+          <div id="qr" class="qr"></div>
+          <p id="room-code-big" class="room-code"></p>
+          <p class="stage-meta">hoặc mở <span id="join-url"></span> và gõ mã</p>
+        </aside>
+
+        <div class="answers">
+          <p id="cards-empty" class="empty-note">Chưa có câu trả lời nào. Mời mọi người quét QR nhé.</p>
+          <ol id="cards" class="cards" role="list"></ol>
+        </div>
+      </div>
+
+      <div class="control-bar">
+        <div class="counter-bar" aria-live="polite">
+          <p class="counter"><span id="count-participants">👥 0 người đang tham gia</span> · <span id="count-answers">✉️ 0 câu trả lời</span> · <span id="count-shown">đã hiện 0/0</span><span id="count-hidden" hidden></span><span id="net-status" class="bar-muted" hidden> · Đang kết nối lại…</span></p>
+          <p id="next-hint" class="bar-hint">Space / → = Tiếp</p>
+        </div>
+        <div class="bar-actions">
+          <button id="btn-prev-q" class="btn bar-ghost" type="button" data-act="prev-q" disabled>‹ Câu trước</button>
+          <button id="btn-next" class="btn bar-primary" type="button" data-act="next" disabled>Tiếp ›</button>
+          <button id="btn-show-all" class="btn bar-ghost" type="button" data-act="show-all" disabled>Hiện tất cả</button>
+          <button id="btn-hide-all" class="btn bar-ghost" type="button" data-act="hide-all" disabled>Ẩn</button>
+          <span class="bar-sep" aria-hidden="true"></span>
+          <button id="btn-next-q" class="btn bar-ghost" type="button" data-act="next-q" disabled>Câu tiếp ›</button>
+          <button id="btn-close" class="btn bar-ghost" type="button" data-act="close" disabled>Kết thúc phòng</button>
+          <details id="data-menu" class="bar-menu">
+            <summary class="btn bar-ghost" role="button" aria-haspopup="menu">Dữ liệu phòng ▾</summary>
+            <ul class="menu" role="menu">
+              <li role="none"><button id="btn-copy-link" class="menu-item" type="button" role="menuitem" data-act="copy-link">Chép link vào phòng</button></li>
+              <li role="none"><button id="btn-csv" class="menu-item" type="button" role="menuitem" data-act="csv">Tải CSV</button></li>
+              <li role="none" class="menu-sep"><button id="btn-delete" class="menu-item menu-danger" type="button" role="menuitem" data-act="delete">Xóa toàn bộ phòng</button></li>
+            </ul>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== H3: Cám ơn cả lớp ===== -->
+    <section id="scr-ended" class="stage-end" aria-labelledby="ended-title" hidden>
+      <svg class="illu-bubbles big" viewBox="0 0 120 104" aria-hidden="true" focusable="false">
+        <rect class="b1" x="10" y="6" width="58" height="36" rx="14"/><path class="b1" d="M26 42l-6 10 16-10z"/>
+        <rect class="b2" x="54" y="30" width="58" height="36" rx="14"/><path class="b2" d="M96 66l6 10-16-10z"/>
+        <rect class="b3" x="28" y="56" width="58" height="36" rx="14"/><path class="b3" d="M44 92l-6 10 16-10z"/>
+      </svg>
+      <h1 id="ended-title" class="stage-q" tabindex="-1">Cám ơn cả lớp</h1>
+      <p id="ended-summary" class="stage-meta"></p>
+      <div class="btn-row">
+        <button id="btn-csv-end" class="btn secondary pill" type="button" data-act="csv">Tải CSV</button>
+        <button id="btn-new" class="btn primary pill" type="button" data-act="new">Tạo phòng mới ›</button>
+      </div>
+      <button id="btn-delete-end" class="link danger" type="button" data-act="delete">Xóa toàn bộ phòng</button>
+    </section>
+  </main>
+
+  <!-- ===== Hộp xác nhận: Kết thúc phòng (navy) / Xóa toàn bộ phòng (đỏ, đếm ngược 10 s) ===== -->
+  <div id="confirm" class="confirm-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-text" hidden>
+    <div id="confirm-box" class="confirm-box">
+      <div id="confirm-body">
+        <h2 id="confirm-title"></h2>
+        <p id="confirm-text"></p>
+      </div>
+      <div class="btn-row">
+        <button id="btn-confirm-no" class="btn ghost" type="button" data-act="confirm-no">Để sau</button>
+        <button id="btn-confirm-yes" class="btn primary" type="button" data-act="confirm-yes"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Hai tab host cùng mở ===== -->
+  <div id="tab-overlay" class="tab-overlay" role="dialog" aria-modal="true" aria-labelledby="overlay-title" hidden>
+    <div class="card">
+      <h2 id="overlay-title" tabindex="-1">Màn dẫn đang mở ở cửa sổ khác</h2>
+      <p>Cửa sổ này tạm dừng để hai bên không bấm chồng nhau. Muốn điều khiển ở đây thì bấm nút dưới nhé.</p>
+      <button id="btn-claim" class="btn primary pill" type="button" data-act="claim">Dùng cửa sổ này</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast stage" role="status" aria-live="polite"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/api.js"></script>
+  <script src="vendor/qrcode.min.js"></script>
+  <script src="js/host.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# Rac he dieu hanh
+desktop.ini
+Thumbs.db
+.DS_Store
+*.tmp
+
+# Du lieu thu local neu ai lo tro MOCK_DATA vao thu muc app (mac dinh mock ghi ra %TEMP%)
+tools/mock-data*.json
+
+# Goi npm neu lo cai trong thu muc app
+node_modules/
+
+# File QA sinh ra khi chay tests/e2e.js (mac dinh ghi ra %TEMP%\tra-loi-an-danh-qa\)
+# Chi ignore ket qua, khong ignore ma test (*.js, run-all.cmd)
+tests/**/*.log
+tests/**/*.png
+tests/**/console-*.txt
+tests/**/e2e-results.txt

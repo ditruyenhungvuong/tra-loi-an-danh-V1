@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1F3A5F">
+  <meta name="description" content="Trả lời ẩn danh: quét QR hoặc gõ mã phòng, gõ một câu, câu của bạn hiện lên màn chiếu không kèm tên.">
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <title>Trả lời ẩn danh</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/join.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Bỏ qua đến nội dung chính</a>
+
+  <main id="main" class="page" tabindex="-1">
+    <noscript><p class="card">Trang này cần bật JavaScript để trả lời được nhé.</p></noscript>
+
+    <!-- ===== Đang vào phòng bằng QR (?room=) – chỉ eyebrow + dòng chờ + skeleton ===== -->
+    <section id="scr-loading" class="card glass" aria-labelledby="loading-state" hidden>
+      <span class="badge-tag">💬 Trả lời ẩn danh</span>
+      <p id="loading-state" class="lookup-state searching" aria-live="polite">Đang vào phòng…</p>
+      <div class="skeleton" aria-hidden="true"></div>
+      <div class="skeleton short" aria-hidden="true"></div>
+    </section>
+
+    <!-- ===== J0: Vào phòng ===== -->
+    <section id="scr-enter" class="card glass" aria-labelledby="enter-title" hidden>
+      <span class="badge-tag">💬 Trả lời ẩn danh</span>
+      <h1 id="enter-title" class="page-title" tabindex="-1">Vào phòng</h1>
+      <p class="page-lead">Gõ 4 số trên màn chiếu, hoặc quét QR là vào thẳng.</p>
+
+      <label class="sr-only" for="room-code">Mã phòng</label>
+      <!-- Không autofocus: bàn phím che màn 375px -->
+      <input id="room-code" class="field-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4"
+             autocomplete="one-time-code" enterkeyhint="go" spellcheck="false" placeholder="Ví dụ 1234"
+             aria-describedby="enter-error enter-hint">
+      <p id="enter-error" class="lookup-state" aria-live="polite"></p>
+
+      <div id="enter-hint" class="submit-hint" aria-live="polite">💡 Gõ đủ 4 số rồi vào nhé.</div>
+      <button id="btn-enter" class="btn primary pill block btn-submit" type="button" data-act="enter" disabled>Vào phòng ›</button>
+
+      <p class="footer-note">Không cần tên, không cần tài khoản.</p>
+    </section>
+
+    <!-- ===== J1 + J2: Trả lời / Đã gửi (cùng một card, đổi phần thân) ===== -->
+    <section id="scr-room" class="card glass left" aria-labelledby="q-text" hidden>
+      <!-- Vùng live: đổi câu thì nhãn và câu hỏi được đọc "Câu k/N. {câu hỏi}" -->
+      <div id="q-live" aria-live="polite">
+        <div class="room-head">
+          <span class="badge-tag">💬 Trả lời ẩn danh</span>
+          <span id="q-label" class="q-badge"></span>
+        </div>
+        <h1 id="q-text" class="q-text" tabindex="-1"></h1>
+      </div>
+
+      <!-- J1: ô gõ -->
+      <div id="answer-form">
+        <p id="q-changed" class="gentle switch-note" hidden>Người dẫn vừa chuyển câu. Câu bạn đang gõ sẽ gửi cho câu mới này. Bạn xem lại hoặc xóa nhé.
+          <button type="button" class="link" data-act="clear-draft">Xóa chữ đang gõ</button></p>
+
+        <label class="sr-only" for="answer">Câu trả lời của bạn</label>
+        <textarea id="answer" class="answer-input" rows="4" maxlength="280" placeholder="Gõ câu trả lời của bạn ở đây…"
+                  autocomplete="off" aria-describedby="answer-count transparency name-note"></textarea>
+        <div class="under-input">
+          <p id="name-note" class="fine">Đừng ghi tên người thật nhé.</p>
+          <span id="answer-count" class="counter" aria-live="polite" hidden></span>
+        </div>
+
+        <p id="transparency" class="transparency-line">Câu trả lời của bạn hiện lên màn chiếu, không kèm tên. Không ai biết ai gửi. Gửi rồi thì không sửa được, bạn đọc lại một lần nhé.</p>
+
+        <div id="send-error" class="gentle" hidden>Chưa gửi được. Mạng hơi chậm, bạn thử lại nhé.</div>
+        <div id="send-hint" class="submit-hint" aria-live="polite">💡 Gõ một câu rồi gửi nhé.</div>
+        <button id="btn-send" class="btn primary pill block btn-submit" type="button" data-act="send" disabled>Gửi ›</button>
+      </div>
+
+      <!-- J2: đã gửi -->
+      <section id="sent" aria-labelledby="sent-title" hidden>
+        <svg class="success-checkmark" viewBox="0 0 52 52" aria-hidden="true" focusable="false">
+          <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+          <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+        </svg>
+        <h2 id="sent-title" tabindex="-1">Đã gửi ✓</h2>
+        <blockquote id="sent-text" class="success-summary">
+          <span class="summary-title">Câu bạn vừa gửi</span>
+          <span id="sent-body" class="summary-line"></span>
+        </blockquote>
+        <p id="sent-note" class="page-lead">Chờ câu tiếp theo nhé.</p>
+      </section>
+
+      <p id="net-status" class="reconnect" aria-live="polite" hidden>Đang kết nối lại…</p>
+      <p class="footer-note">Không cần tên, không cần tài khoản.</p>
+    </section>
+
+    <!-- ===== J3: Kết thúc (hai biến thể: cám ơn / đã kết thúc) ===== -->
+    <section id="scr-closed" class="card glass" aria-labelledby="closed-title" hidden>
+      <span class="badge-tag">💬 Trả lời ẩn danh</span>
+      <svg id="closed-illu" class="illu-bubbles" viewBox="0 0 120 104" aria-hidden="true" focusable="false">
+        <rect class="b1" x="10" y="6" width="58" height="36" rx="14"/><path class="b1" d="M26 42l-6 10 16-10z"/>
+        <rect class="b2" x="54" y="30" width="58" height="36" rx="14"/><path class="b2" d="M96 66l6 10-16-10z"/>
+        <rect class="b3" x="28" y="56" width="58" height="36" rx="14"/><path class="b3" d="M44 92l-6 10 16-10z"/>
+      </svg>
+      <h1 id="closed-title" class="page-title" tabindex="-1"></h1>
+      <p id="closed-lead" class="page-lead"></p>
+      <footer>
+        <!-- P1: chưa hiện ở v0.1 -->
+        <a id="btn-forget" class="link" href="#" data-act="forget" hidden>Xóa dấu vết trên máy này</a>
+      </footer>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/join.js"></script>
+</body>
+</html>

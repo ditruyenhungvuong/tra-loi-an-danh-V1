@@ -1,0 +1,124 @@
+/* =========================================================
+   Trang người dẫn (host.html) – máy chiếu 16:9 từ 1280×720, đọc được từ cuối phòng
+   H0 nhập khóa, H1 tạo phòng: card giữa màn (dùng .card.glass ở styles.css).
+   H2 màn chiếu: lưới câu hỏi (trái) + rail QR (phải) + vùng card cuộn + thanh điều khiển navy.
+   H3 màn kết. Thêm overlay hai tab, menu dữ liệu, hộp xác nhận.
+   ========================================================= */
+
+/* ===== Khung trang: khi ở màn chiếu không cuộn cả trang, chỉ vùng card cuộn ===== */
+body.host { min-height: 100vh; }
+body.host.on-stage { overflow: hidden; height: 100vh; }
+body.host .page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+body.host .page.stage-mode { display: block; padding: 0; min-height: 0; height: 100vh; }
+
+#scr-key .field-input { letter-spacing: 0; font-size: 17px; text-align: left; }
+#scr-key .check { justify-content: center; font-size: 15px; }
+#scr-key .check input { margin-top: 0; }
+#key-error { display: inline-block; margin: 2px 0 12px; }
+#key-error:empty { display: none; }
+
+.questions-input { font-size: 18px; line-height: 1.5; min-height: 220px; resize: vertical; padding: 14px 16px; text-align: left; }
+#questions-count { display: block; text-align: left; margin: 6px 0 14px; }
+#create-error { margin-bottom: 10px; }
+
+/* ===== Màn chiếu ===== */
+.stage-wrap { display: grid; grid-template-rows: 1fr auto; height: 100vh; }
+.stage-grid { display: grid; grid-template-columns: minmax(0, 1fr) var(--stage-rail); grid-template-rows: auto minmax(0, 1fr); gap: 20px 32px; padding: 28px 32px 16px; min-height: 0; }
+.stage-head { grid-column: 1; grid-row: 1; min-width: 0; }
+.q-badge.stage { font-size: 24px; padding: 6px 18px; margin-bottom: 12px; }
+.stage-q { font-size: var(--stage-q); line-height: 1.2; font-weight: 700; color: var(--primary); margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.stage-q.long { font-size: calc(var(--stage-q) * .8); }
+
+.qr-panel { grid-column: 2; grid-row: 1 / span 2; align-self: start; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px 16px 20px; text-align: center; box-shadow: var(--shadow); }
+.qr-panel .stage-meta { margin: 0 0 10px; }
+.qr { width: var(--stage-qr); height: var(--stage-qr); margin: 0 auto 12px; background: #fff; border-radius: 8px; }
+.qr svg { display: block; width: 100%; height: 100%; }
+.qr.fallback { display: none; }
+.room-code { font-size: var(--stage-code); font-weight: 700; color: var(--primary); letter-spacing: .08em; font-variant-numeric: tabular-nums; line-height: 1.1; margin: 4px 0 8px; }
+.stage-meta { font-size: var(--stage-meta); color: var(--ink); line-height: 1.35; overflow-wrap: anywhere; }
+#join-url { font-weight: 600; color: var(--primary); }
+
+/* ===== Vùng card câu trả lời (cuộn dọc riêng) ===== */
+.answers { grid-column: 1; grid-row: 2; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 4px 4px 12px 0; }   /* cuộn mượt hay tức thì do host.js quyết (B-01) */
+.cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 14px; align-content: start; }
+.card-answer { position: relative; background: var(--surface); border: 1.5px solid var(--line); border-radius: 18px; padding: 16px 56px 16px 20px; font-size: var(--stage-card); line-height: 1.35; color: var(--ink); box-shadow: var(--shadow); min-width: 0; }
+.card-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.card-answer.is-latest { border: 3px solid var(--primary); background: var(--primary-soft); padding: 14.5px 54.5px 14.5px 18.5px; }
+/* B-01: câu dài chiếm cả hàng (ít dòng hơn) và chữ nhỏ một nấc nhưng không dưới 28px (UX 3.2) */
+.card-answer.long { grid-column: 1 / -1; font-size: max(28px, calc(var(--stage-card) * .95)); line-height: 1.3; }
+.card-answer.enter { animation: cardIn var(--card-in) ease-out both; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+.card-hide { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent; color: var(--muted); opacity: .55; font: 600 22px/1 var(--font); cursor: pointer; display: grid; place-items: center; }
+.card-hide:hover, .card-hide:focus-visible { opacity: 1; background: var(--surface-2); }
+.empty-note { border: 1.5px dashed var(--teal); border-radius: 18px; padding: 28px 24px; text-align: center; font-size: 28px; color: var(--muted); margin: 0; line-height: 1.4; }
+
+/* ===== Thanh điều khiển đáy ===== */
+.control-bar { min-height: var(--bar-h); background: var(--bar-bg); color: var(--bar-ink); display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 24px; }
+.counter-bar { flex: 1 1 380px; min-width: 0; }
+.counter { font-size: var(--stage-meta); font-weight: 600; margin: 0; line-height: 1.3; }
+.counter .bar-muted, .bar-hint { color: var(--bar-muted); font-weight: 400; }
+.bar-hint { font-size: 14px; margin: 2px 0 0; }
+.bar-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; }
+.bar-sep { width: 1px; height: 40px; background: rgba(255, 255, 255, .35); margin: 0 4px; }
+.btn.bar-primary { background: #fff; color: var(--primary); min-height: 56px; min-width: 200px; font-size: 24px; font-weight: 700; border-radius: 14px; box-shadow: 0 6px 18px rgba(0, 0, 0, .25); padding: 10px 28px; }
+.btn.bar-primary:hover { background: var(--primary-soft); }
+.btn.bar-ghost { background: transparent; color: #fff; border: 1.5px solid rgba(255, 255, 255, .6); min-height: 48px; font-size: 18px; font-weight: 600; border-radius: 14px; padding: 8px 16px; }
+.btn.bar-ghost:hover { background: rgba(255, 255, 255, .12); }
+.btn.bar-solid { background: #fff; color: var(--primary); border-color: #fff; min-height: 48px; font-size: 18px; font-weight: 700; border-radius: 14px; padding: 8px 18px; }
+.btn.bar-solid:hover { background: var(--primary-soft); }
+.control-bar .btn:disabled { opacity: .4; }
+.control-bar .btn:focus-visible { outline: 3px solid var(--warm); outline-offset: 2px; }
+
+/* Menu "Dữ liệu phòng ▾": popover mở lên trên bar */
+.bar-menu { position: relative; }
+.bar-menu > summary { list-style: none; display: inline-flex; }
+.bar-menu > summary::-webkit-details-marker { display: none; }
+.bar-menu[open] > summary { background: rgba(255, 255, 255, .12); }
+.bar-menu .menu { position: absolute; right: 0; bottom: calc(100% + 8px); background: var(--surface); color: var(--ink); border-radius: 14px; box-shadow: var(--shadow-card); list-style: none; margin: 0; padding: 6px; min-width: 240px; z-index: 30; }
+.menu-item { display: block; width: 100%; text-align: left; background: none; border: 0; font: 500 17px/1.3 var(--font); color: var(--ink); padding: 12px 14px; border-radius: 10px; cursor: pointer; min-height: 44px; }
+.menu-item:hover, .menu-item:focus-visible { background: var(--surface-2); }
+.menu-sep { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 6px; }
+.menu-item.menu-danger { color: var(--danger); }
+
+/* Đang mở phòng: skeleton và bar bị khóa */
+.stage-wrap.loading .stage-q, .stage-wrap.loading .q-badge.stage { visibility: hidden; }
+.stage-wrap.loading .stage-head { position: relative; }
+.stage-wrap.loading .stage-head::before { content: ''; position: absolute; inset: 0; border-radius: 16px; background: var(--surface-2); }
+.stage-wrap.loading .qr-panel > * { visibility: hidden; }
+.stage-wrap.loading .qr-panel { background: var(--surface-2); min-height: 360px; }
+
+/* ===== Màn kết (H3) ===== */
+.stage-end { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 32px; }
+.stage-end .stage-q { font-size: calc(var(--stage-q) * 1.1); margin-bottom: 10px; }
+.stage-end .stage-meta { font-size: calc(var(--stage-meta) * 1.25); color: var(--ink); margin: 0 0 28px; }
+.stage-end .btn-row { justify-content: center; gap: 16px; margin: 0 0 20px; }
+.stage-end .btn.pill { font-size: 20px; padding: 16px 36px; }
+.link.danger { color: var(--danger); font-size: 16px; }
+
+/* ===== Overlay hai tab ===== */
+.tab-overlay { position: fixed; inset: 0; background: rgba(251, 248, 241, .96); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 40; text-align: center; }
+.tab-overlay .card { max-width: 520px; padding: 32px; }
+.tab-overlay h2 { font-size: 1.6rem; }
+
+/* ===== Màn hẹp (laptop nhỏ, thử trên điện thoại): rail xuống dưới câu hỏi ===== */
+@media (max-width: 1000px) {
+  .stage-grid { grid-template-columns: 1fr; grid-template-rows: auto auto minmax(0, 1fr); padding: 20px 16px 12px; gap: 16px; }
+  .qr-panel { grid-column: 1; grid-row: 2; display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 18px; text-align: left; padding: 12px 16px; }
+  .qr-panel .stage-meta:first-child { grid-column: 1 / -1; margin-bottom: 4px; }
+  .qr { grid-row: 2 / span 2; margin: 0; width: 140px; height: 140px; }
+  .answers { grid-column: 1; grid-row: 3; }
+  .cards { grid-template-columns: 1fr; }
+  .control-bar { padding: 10px 12px; }
+  .btn.bar-primary { min-width: 140px; font-size: 20px; }
+}
+@media (max-width: 600px) {
+  :root { --stage-q: 28px; --stage-card: 20px; --stage-code: 44px; --stage-meta: 17px; }
+  .empty-note { font-size: 20px; }
+  .btn.bar-ghost, .btn.bar-solid { font-size: 15px; padding: 6px 10px; }
+  .bar-sep { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-answer.enter { animation: none; }
+  .answers { scroll-behavior: auto; }
+}
